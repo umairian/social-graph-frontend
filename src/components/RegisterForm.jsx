@@ -2,7 +2,25 @@ import { Button, CircularProgress, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router";
-import { registerUser } from "../redux/authSlice";
+import { registerUser, setAuthSlice } from "../redux/authSlice";
+import { useMutation, gql } from '@apollo/client';
+
+const SIGNUP_MUTATION = gql`
+  mutation UserMutation($name: String!, $email: String!, $password: String!, $profileUrl: String) {
+  signup(name: $name, email: $email, password: $password, profile_url: $profileUrl) {
+    user {
+      _id
+      name
+      email
+      password
+      dob
+      profile_url
+      createdAt
+    }
+    token
+  }
+}
+`;
 
 export default function RegisterForm() {
   const [registerData, setRegisterData] = useState({
@@ -15,9 +33,18 @@ export default function RegisterForm() {
   const history = useHistory();
   const { status, isLoggedIn } = useSelector((state) => state.auth);
 
-  const handleSubmit = (e) => {
+  // GraphQL
+  const [signUp, { data, loading, error }] = useMutation(SIGNUP_MUTATION);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(registerUser(registerData));
+    try {
+      const {data: { signup: signUpResponse }} = await signUp({ variables: registerData });
+    console.log("signup response", signUpResponse)
+  dispatch(setAuthSlice(signUpResponse));
+    } catch (err) {
+      console.log(err)
+    }
   };
 
   useEffect(() => {

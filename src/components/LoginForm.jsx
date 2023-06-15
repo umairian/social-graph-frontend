@@ -2,7 +2,25 @@ import { Button, CircularProgress, TextField } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useHistory } from "react-router";
-import { loginUser } from "../redux/authSlice";
+import { login } from "../redux/authSlice";
+import { useMutation, gql } from '@apollo/client';
+
+const LOGIN_MUTATION = gql`
+  mutation UserMutation($email: String!, $password: String!) {
+  login(email: $email, password: $password) {
+    user {
+      _id
+      name
+      email
+      password
+      dob
+      profile_url
+      createdAt
+    }
+    token
+  }
+}
+`;
 
 export default function LoginForm() {
   const [loginData, setLoginData] = useState({ email: "", password: "" });
@@ -10,14 +28,20 @@ export default function LoginForm() {
   const history = useHistory();
   const { status, isLoggedIn } = useSelector((state) => state.auth);
 
-  const handleSubmit = (e) => {
+  // GraphQL
+  const [loginReq, { data, loading, error }] = useMutation(LOGIN_MUTATION);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    dispatch(loginUser(loginData));
+    try {
+      const {data: { login: loginResponse }} = await loginReq({ variables: loginData });
+      console.log("login response", loginResponse)
+      dispatch(login(loginResponse));
+    } catch (err) {
+      console.log(err)
+    }
   };
-  const loginAsGuest = () => {
-    setLoginData({ email: "tomato@mail.com", password: "tomato" });
-    dispatch(loginUser({ email: "tomato@mail.com", password: "tomato" }));
-  };
+
   useEffect(() => {
     if (isLoggedIn) {
       history.push("/");
@@ -77,7 +101,6 @@ export default function LoginForm() {
         </Button>
       </form>
       <Button
-        onClick={loginAsGuest}
         sx={{
           width: "100%",
           margin: ".5rem 0 1rem 0.5rem",

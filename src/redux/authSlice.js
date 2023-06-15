@@ -61,7 +61,19 @@ export const authSlice = createSlice({
   initialState,
   reducers: {
     setAuth: (state, action) => {
-      state.isLoggedIn = action.payload.isLoggedIn;
+      state.isLoggedIn = true;
+    },
+    setAuthSlice: (state, action) => {
+      const { token, user: {name, email, _id} } = action.payload;
+      localStorage.setItem(
+        "login",
+        JSON.stringify({ token, email, _id, name, isLoggedIn: true })
+      );
+      state.user.name = name;
+      state.user.email = email;
+      state.user._id = _id;
+      state.status = "success";
+      state.isLoggedIn = true;
     },
     logout: (state, action) => {
       localStorage.clear();
@@ -70,6 +82,21 @@ export const authSlice = createSlice({
     },
     setUser: (state, action) => {
       state.user = action.payload;
+    },
+    setProfile: (state, action) => {
+      state.profile = action.payload;
+    },
+    login: (state, action) => {
+      const { token, user: {name, email, _id} } = action.payload;
+      localStorage.setItem(
+        "login",
+        JSON.stringify({ token, email, _id, name, isLoggedIn: true })
+      );
+      state.user.name = name;
+      state.user.email = email;
+      state.user._id = _id;
+      state.status = "success";
+      state.isLoggedIn = true;
     },
   },
   extraReducers: {
@@ -137,4 +164,4 @@ export const authSlice = createSlice({
 });
 
 export default authSlice.reducer;
-export const { setAuth, logout } = authSlice.actions;
+export const { setAuth, logout, setAuthSlice, setProfile, login } = authSlice.actions;

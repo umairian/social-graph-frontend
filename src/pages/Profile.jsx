@@ -18,86 +18,39 @@ import DateRangeIcon from "@mui/icons-material/DateRange";
 import Post from "../components/Post";
 import { useDispatch, useSelector } from "react-redux";
 import { useParams } from "react-router";
-import { getProfile } from "../redux/authSlice";
+import { getProfile, setProfile } from "../redux/authSlice";
 import { Link as RouteLink } from "react-router-dom";
-import { getFollowers, getFollowings } from "../redux/followSlice";
-import {
-  followAccount,
-  followingAccount,
-  unfollowAccount,
-  unfollowingAccount,
-} from "../api";
 import format from "date-fns/format";
+import { useQuery, gql } from '@apollo/client';
+
+const USER_QUERY = gql`
+  query UserQuery($id: String!) {
+ user(_id: $id) {
+   _id
+   name
+   email
+   profile_url
+   createdAt
+ }
+}
+`;
 
 export default function Profile() {
   const theme = useTheme();
   const { id } = useParams();
   const dispatch = useDispatch();
   const { profile, status } = useSelector((state) => state.auth);
-  const { followingStatus, followerStatus, followers, followings } =
-    useSelector((state) => state.follow);
   const { _id } = JSON.parse(localStorage.getItem("login"));
 
-  useEffect(() => {
-    dispatch(getProfile(id));
-  }, [dispatch, id]);
+  // GraphQL
+  const { loading, data, error} = useQuery(USER_QUERY, { variables: { id }});
 
   useEffect(() => {
-    if (profile.userId) {
-      dispatch(getFollowers(profile.userId._id));
-      dispatch(getFollowings(profile.userId._id));
+    console.log("data", data)
+    if(data?.user && !loading) {
+      dispatch(setProfile(data.user))
     }
-  }, [dispatch, profile.userId]);
-
-  const handleFollow = async () => {
-    const responseFollow = await followAccount({
-      userId: profile.userId._id,
-      followerId: _id,
-    });
-    const responseFlwing = await followingAccount({
-      followingId: profile.userId._id,
-      userId: _id,
-    });
-    if (responseFollow) {
-      dispatch(getFollowers(id));
-    }
-    if (responseFlwing) {
-      dispatch(getFollowings(id));
-    }
-  };
-
-  const handleUnfollow = async () => {
-    const responseFollow = await unfollowAccount({
-      id: _id,
-      userId: profile.userId._id,
-    });
-    const responseFlwing = await unfollowingAccount({
-      id: profile.userId._id,
-      userId: _id,
-    });
-    if (responseFollow) {
-      dispatch(getFollowers(id));
-    }
-    if (responseFlwing) {
-      dispatch(getFollowings(id));
-    }
-  };
-
-  function hideFollow() {
-    if (profile.userId) {
-      return _id === profile.userId._id;
-    }
-  }
-
-  function isFollowVisible() {
-    if (followers) {
-      const index = followers.findIndex(
-        (follower) => follower.followerId === _id
-      );
-      if (index === -1) return true;
-      return false;
-    }
-  }
+  }, [loading]);
 
   return (
     <Box>
@@ -114,10 +67,10 @@ export default function Profile() {
           {status === "success" && (
             <Grid item>
               <Typography variant="h6">
-                {profile.userId && profile.userId && profile.userId.name}
+                {profile._id && profile._id && profile.name}
               </Typography>
               <Typography sx={{ fontSize: "12px", color: "#555" }}>
-                {profile.posts && profile.posts.length} posts
+                {12} posts
               </Typography>{" "}
             </Grid>
           )}
@@ -135,7 +88,7 @@ export default function Profile() {
           <Box position="relative">
             <img
               width="100%"
-              src={profile.backgroundImageUrl}
+              src={profile.profile_url}
               alt="background"
             />
             <Box
@@ -147,7 +100,7 @@ export default function Profile() {
                 borderRadius: "50%",
               }}
             >
-              <img width="150px" src={profile.profileImageUrl} alt="profile" />
+              <img width="150px" src={profile.profile_url} alt="profile" />
             </Box>
           </Box>
           <Box textAlign="right" padding="10px 20px">
@@ -157,9 +110,7 @@ export default function Profile() {
             <IconButton>
               <MailOutlineIcon />
             </IconButton>
-            {!hideFollow() && isFollowVisible() && (
               <Button
-                onClick={handleFollow}
                 size="small"
                 sx={{
                   borderRadius: theme.shape.borderRadius,
@@ -174,11 +125,8 @@ export default function Profile() {
               >
                 Follow
               </Button>
-            )}
 
-            {!hideFollow() && !isFollowVisible() && (
               <Button
-                onClick={handleUnfollow}
                 size="small"
                 sx={{
                   borderRadius: theme.shape.borderRadius,
@@ -193,17 +141,16 @@ export default function Profile() {
               >
                 Unfollow
               </Button>
-            )}
           </Box>
           <Box padding="10px 20px">
             <Typography variant="h6" sx={{ fontWeight: "500" }}>
-              {profile.userId && profile.userId.name}
+              {profile._id && profile.name}
             </Typography>
             <Typography sx={{ fontSize: "14px", color: "#555" }}>
-              @{profile.userId && profile.userId.handle}
+              @{profile._id && profile.email}
             </Typography>
             <Typography fontSize="16px" color="#333" padding="10px 0">
-              {profile.bio}
+              {"Resident at Internal Medicine"}
             </Typography>
             <Box
               display="flex"
@@ -214,7 +161,7 @@ export default function Profile() {
               <Box display="flex">
                 <LocationOnIcon htmlColor="#555" />
                 <Typography sx={{ ml: "6px", color: "#555" }}>
-                  {profile.location}
+                  {"Peshawar"}
                 </Typography>
               </Box>
               <Box display="flex" marginLeft="1rem">
@@ -229,23 +176,22 @@ export default function Profile() {
               <Box display="flex" marginLeft="1rem">
                 <DateRangeIcon htmlColor="#555" />
                 <Typography sx={{ ml: "6px", color: "#555" }}>
-                  {profile.userId &&
-                    profile.userId &&
-                    profile.userId.createdAt &&
-                    format(new Date(profile.userId.createdAt), "MMM dd yyyy")}
+                  {profile._id &&
+                    profile._id &&
+                    profile.createdAt}
                 </Typography>
               </Box>
             </Box>
             <Box display="flex">
               <Typography color="#555" marginRight="1rem">
                 <strong style={{ color: "black" }}>
-                  {followingStatus === "success" && followings.length}
+                  {11}
                 </strong>
                 Following
               </Typography>
               <Typography color="#555" marginRight="1rem">
                 <strong style={{ color: "black" }}>
-                  {followerStatus === "success" && followers.length}
+                  {13}
                 </strong>
                 Followers
               </Typography>
@@ -264,10 +210,6 @@ export default function Profile() {
               Posts
             </Typography>
           </Box>
-          {profile.posts &&
-            profile.posts.map((post) => (
-              <Post key={post._id} post={post} profile={true} />
-            ))}
         </Box>
       )}
     </Box>
