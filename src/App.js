@@ -10,8 +10,10 @@ import { useDispatch, useSelector } from "react-redux";
 import { useEffect } from "react";
 import axios from "axios";
 import { setAuth } from "./redux/authSlice";
+import Chat from "./pages/Chat";
 
 function App() {
+
   const dispatch = useDispatch();
   const { isLoggedIn } = useSelector((state) => state.auth);
 
@@ -39,6 +41,11 @@ function App() {
         <Layout>
           <PostDetails />
         </Layout>
+      </PrivateRoute>
+      <PrivateRoute exact path="/chats">
+        
+          <Chat />
+        
       </PrivateRoute>
       <PrivateRoute exact path="/">
         <Layout>

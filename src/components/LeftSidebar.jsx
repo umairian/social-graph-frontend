@@ -13,7 +13,7 @@ import {
   Input,
   useTheme,
 } from "@mui/material";
-import BookmarkIcon from "@mui/icons-material/Bookmark";
+import ChatIcon from "@mui/icons-material/ChatBubble";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import LogoutIcon from "@mui/icons-material/Logout";
 import FavoriteIcon from "@mui/icons-material/Favorite";
@@ -94,6 +94,11 @@ export default function LeftSidebar() {
               </Hidden>
             </ListItem>
           </NavLink>
+          <NavLink to="/chats" style={{
+              textDecoration: "none",
+              color: "inherit",
+              backgroundColor: "inherit",
+            }}>
           <ListItem
             button
             sx={{
@@ -102,7 +107,7 @@ export default function LeftSidebar() {
             }}
           >
             <ListItemIcon>
-              <BookmarkIcon fontSize="medium" color="action" />
+              <ChatIcon fontSize="medium" color="action" />
             </ListItemIcon>
             <Hidden lgDown>
               <ListItemText
@@ -110,10 +115,11 @@ export default function LeftSidebar() {
                   fontSize: "18px",
                   color: theme.palette.action.active,
                 }}
-                primary="Bookmarks"
+                primary="Chats"
               />
             </Hidden>
           </ListItem>
+          </NavLink>
           <ListItem
             button
             sx={{
