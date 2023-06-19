@@ -14,7 +14,7 @@ import {
   VoiceCallButton,
 } from "@chatscope/chat-ui-kit-react";
 import React, { useEffect, useState } from "react";
-import { useQuery, gql } from "@apollo/client";
+import { useQuery, gql, useMutation } from "@apollo/client";
 import socket from "../utils/socket";
 import { useSelector } from "react-redux";
 
@@ -43,24 +43,54 @@ const MESSAGES_QUERY = gql`
 }
 `;
 
+const SEND_MESSAGE_MUTATION = gql`
+mutation SendMessage($recipient: String!, $sender: String!, $content: String!) {
+  sendMessage(recipient: $recipient, sender: $sender, content: $content) {
+    _id
+    recipient
+    sender
+    content
+  }
+}
+`;
+
 export default function Chat() {
   const [recipient, setRecipient] = useState(null);
+  const [recipientName, setRecipientName] = useState(null);
+  const [recipientProfile, setRecipientProfile] = useState(null)
+  const [messages, setMessages] = useState([]);
 
   const { _id } = useSelector((store) => store.auth.user);
-  console.log("id ", _id);
 
-//   useEffect(() => {
-//     // no-op if the socket is already connected
-//     socket.emit("message", {
-//       sender: "64897121d9eae4e868a18403",
-//       recipient: "64896d09e380a5cc8c44e0c0",
-//       content: "Assalam O Alaikum Owais",
-//     });
-//   }, []);
+      useEffect(() => {
+        console.log(socket)
+
+        socket.emit("authenticate", _id);
+
+        socket.on("message", (data) => {
+        console.log('message', data)
+        setMessages([...messages, data]);
+
+        return () => {
+          socket.off("message");
+        }
+      })
+    }, [])
+    
+
 
   // GraphQL
   const { loading, data, error } = useQuery(USERS_QUERY);
   const { loading: messagesLoading, data: messagesData, error: messagesError } = useQuery(MESSAGES_QUERY, { variables: { sender: _id, recipient }});
+
+  useEffect(() => {
+    if(messagesData) {
+      setMessages(messagesData.messages);
+    }
+  }, [messagesData])
+
+  // GraphQL
+  const [sendMessageReq] = useMutation(SEND_MESSAGE_MUTATION);
 
   return (
     <div style={{ display: "flex" }}>
@@ -87,7 +117,11 @@ export default function Chat() {
                 name={user.name}
                 lastSenderName="Lilly"
                 info="Yes i can do it for you"
-                onClick={() => setRecipient(user._id)}
+                onClick={() => {
+                  setRecipient(user._id)
+                  setRecipientName(user.name)
+                  setRecipientProfile(user.profile_url)
+                }}
               >
                 <Avatar src={user.profile_url} name={user.name} />
               </Conversation>
@@ -105,12 +139,12 @@ export default function Chat() {
           <ConversationHeader>
             <Avatar
               src={
-                "https://t4.ftcdn.net/jpg/03/85/50/01/360_F_385500115_T8QiYsPeliQ5tE3npwOuJNUfunqFBo1U.jpg"
+                recipientProfile
               }
-              name="Emily"
+              name={recipientName}
             />
             <ConversationHeader.Content
-              userName="Emily"
+              userName={recipientName}
               info="Active 10 mins ago"
             />
             <ConversationHeader.Actions>
@@ -122,7 +156,7 @@ export default function Chat() {
           <MessageList>
             <MessageSeparator content="Saturday, 30 November 2019" />
 
-            {messagesData?.messages.length && messagesData.messages.map(message => <Message
+            {messages?.length && messages.map(message => <Message
               model={{
                 message: message.content,
                 sentTime: message.createdAt,
@@ -133,7 +167,15 @@ export default function Chat() {
             ></Message>)}
             
           </MessageList>
-          <MessageInput placeholder="Type message here" />
+          <MessageInput placeholder="Type message here" onSend={async (data) => {
+            const payload = {
+              sender: _id,
+              recipient,
+              content: data,
+            }
+            socket.emit("message", payload);
+            setMessages((data) => [...data, payload])
+          }} />
         </ChatContainer>
       </div>}
     </div>
